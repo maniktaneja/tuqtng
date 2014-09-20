@@ -103,6 +103,10 @@ func (b *sitebucket) CreateIndex(name string, key catalog.IndexKey, using catalo
 	return nil, query.NewError(nil, "Not supported.")
 }
 
+func (b *sitebucket) CreateMRIndex(name string, key catalog.IndexKey, projection string, where string, groupby string) (catalog.Index, query.Error) {
+	return nil, query.NewError(nil, "Not Supported.")
+}
+
 func newSitesBucket(p *pool) (*sitebucket, query.Error) {
 	b := new(sitebucket)
 	b.pool = p

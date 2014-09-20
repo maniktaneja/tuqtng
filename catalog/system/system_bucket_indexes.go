@@ -168,6 +168,10 @@ func (b *indexbucket) CreateIndex(name string, key catalog.IndexKey, using catal
 	return nil, query.NewError(nil, "Not supported.")
 }
 
+func (b *indexbucket) CreateMRIndex(name string, key catalog.IndexKey, projection string, where string, groupby string) (catalog.Index, query.Error) {
+	return nil, query.NewError(nil, "Not Supported.")
+}
+
 func newIndexesBucket(p *pool) (*indexbucket, query.Error) {
 	b := new(indexbucket)
 	b.pool = p

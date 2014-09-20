@@ -10,6 +10,7 @@
 package xpipeline
 
 import (
+	"encoding/json"
 	"fmt"
 	"runtime/debug"
 	"strings"
@@ -31,19 +32,21 @@ type CreateIndex struct {
 	index_type            string
 	primary               bool
 	on                    ast.ExpressionList
+	selectStatement       *ast.SelectStatement
 	downstreamStopChannel misc.StopChannel
 	query                 network.Query
 }
 
-func NewCreateIndex(bucket catalog.Bucket, name string, index_type string, primary bool, on ast.ExpressionList) *CreateIndex {
+func NewCreateIndex(bucket catalog.Bucket, name string, index_type string, primary bool, on ast.ExpressionList, selectStatement *ast.SelectStatement) *CreateIndex {
 	return &CreateIndex{
-		itemChannel:    make(dparval.ValueChannel),
-		supportChannel: make(PipelineSupportChannel),
-		bucket:         bucket,
-		name:           name,
-		index_type:     index_type,
-		primary:        primary,
-		on:             on,
+		itemChannel:     make(dparval.ValueChannel),
+		supportChannel:  make(PipelineSupportChannel),
+		bucket:          bucket,
+		name:            name,
+		index_type:      index_type,
+		primary:         primary,
+		on:              on,
+		selectStatement: selectStatement,
 	}
 }
 
@@ -70,7 +73,19 @@ func (this *CreateIndex) Run(stopChannel misc.StopChannel) {
 	var index catalog.Index
 	var err query.Error
 
-	if this.primary {
+	// select expression processing
+	if this.selectStatement != nil {
+		projection, _ := json.Marshal(this.selectStatement.Select)
+		clog.To(CHANNEL, "Result Expression list %s ", projection)
+		where, _ := json.Marshal(this.selectStatement.Where)
+		clog.To(CHANNEL, "Where expression %s", where)
+		group, _ := json.Marshal(this.selectStatement.GroupBy)
+		clog.To(CHANNEL, "Group by expression %s ", group)
+
+		clog.To(CHANNEL, "create_index (mr index) operator starting")
+		index, err = this.bucket.CreateMRIndex(this.name, indexOn, string(projection), string(where), string(group))
+
+	} else if this.primary {
 		clog.To(CHANNEL, "create_index (primary) operator starting")
 		index, err = this.bucket.CreatePrimaryIndex()
 	} else {

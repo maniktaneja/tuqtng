@@ -50,6 +50,85 @@ func newViewIndex(name string, on catalog.IndexKey, bkt *bucket) (*viewIndex, er
 	return &inst, nil
 }
 
+func newMRViewIndex(name string, on catalog.IndexKey, bkt *bucket, projection string, where string, groupby string) (*viewIndex, error) {
+
+	doc, err := newMRDesignDoc(name, on, projection, where, groupby)
+	if err != nil {
+		return nil, err
+	}
+
+	inst := viewIndex{
+		name:   name,
+		using:  catalog.MRVIEW,
+		on:     on,
+		ddoc:   doc,
+		bucket: bkt,
+	}
+
+	err = inst.putDesignDoc()
+	if err != nil {
+		return nil, err
+	}
+
+	err = inst.WaitForIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	return &inst, nil
+}
+
+func newMRDesignDoc(idxname string, on catalog.IndexKey, projection string, where string, groupby string) (*designdoc, error) {
+	var doc designdoc
+
+	doc.name = "ddl_" + idxname
+	doc.viewname = idxname
+
+	err := generateMRMap(on, where, groupby, &doc)
+	if err != nil {
+		return nil, err
+	}
+
+	err = generateMRReduce(on, projection, &doc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &doc, nil
+}
+
+type mrDesignDoc struct {
+	Emit  string `json:"emit"`
+	Where string `json:"where"`
+}
+
+func generateMRMap(on catalog.IndexKey, where string, groupby string, doc *designdoc) error {
+
+	mrDoc := &mrDesignDoc{Emit: groupby, Where: where}
+	stringer, err := json.Marshal(mrDoc)
+	if err != nil {
+		return err
+	}
+
+	doc.mapfn = string(stringer)
+	fmt.Printf("\n --- Map function \n %s \n", doc.mapfn)
+	return nil
+}
+
+func generateMRReduce(on catalog.IndexKey, projection string, doc *designdoc) error {
+	doc.reducefn = ""
+	if strings.Contains(strings.ToUpper(projection), "AVG") == true {
+		doc.reducefn = "_average"
+	} else if strings.Contains(strings.ToUpper(projection), "COUNT") == true {
+		doc.reducefn = "_count"
+	} else if strings.Contains(strings.ToUpper(projection), "SUM") == true {
+		doc.reducefn = "_sum"
+	}
+
+	fmt.Printf("\n -- Reduce function \n %s \n", doc.reducefn)
+	return nil
+}
+
 func (vi *viewIndex) String() string {
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("name: %v ", vi.name))

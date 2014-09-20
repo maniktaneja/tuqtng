@@ -66,6 +66,7 @@ type Bucket interface {
 	Release()
 	CreatePrimaryIndex() (PrimaryIndex, query.Error)
 	CreateIndex(name string, key IndexKey, using IndexType) (Index, query.Error)
+	CreateMRIndex(name string, key IndexKey, projection string, where string, groupby string) (Index, query.Error)
 }
 
 type IndexType string
@@ -73,6 +74,7 @@ type IndexType string
 const (
 	UNSPECIFIED IndexType = "unspecified" // used by non-view primary_indexes
 	VIEW        IndexType = "view"
+	MRVIEW      IndexType = "mr_view"
 )
 
 type IndexKey []ast.Expression

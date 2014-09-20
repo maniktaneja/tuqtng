@@ -562,16 +562,17 @@ func (this *Grouper) Sources() []PlanElement {
 }
 
 type CreateIndex struct {
-	Type      string             `json:"type"`
-	Pool      string             `json:"pool"`
-	Bucket    string             `json:"bucket"`
-	Name      string             `json:"name"`
-	IndexType string             `json:"index_type"`
-	Primary   bool               `json:"primary"`
-	On        ast.ExpressionList `json:"on"`
+	Type      string               `json:"type"`
+	Pool      string               `json:"pool"`
+	Bucket    string               `json:"bucket"`
+	Name      string               `json:"name"`
+	IndexType string               `json:"index_type"`
+	Primary   bool                 `json:"primary"`
+	Select    *ast.SelectStatement `json: "select statement"`
+	On        ast.ExpressionList   `json:"on"`
 }
 
-func NewCreateIndex(pool string, bucket string, name string, index_type string, primary bool, on ast.ExpressionList) *CreateIndex {
+func NewCreateIndex(pool string, bucket string, name string, index_type string, primary bool, on ast.ExpressionList, selectStatement *ast.SelectStatement) *CreateIndex {
 	return &CreateIndex{
 		Type:      "create_index",
 		Pool:      pool,
@@ -580,6 +581,7 @@ func NewCreateIndex(pool string, bucket string, name string, index_type string, 
 		IndexType: index_type,
 		Primary:   primary,
 		On:        on,
+		Select:    selectStatement,
 	}
 }
 

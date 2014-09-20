@@ -97,6 +97,10 @@ func (b *dualbucket) CreateIndex(name string, key catalog.IndexKey, using catalo
 	return nil, query.NewError(nil, "Not supported.")
 }
 
+func (b *dualbucket) CreateMRIndex(name string, key catalog.IndexKey, projection string, where string, groupby string) (catalog.Index, query.Error) {
+	return nil, query.NewError(nil, "Not Supported.")
+}
+
 func newDualBucket(p *pool) (*dualbucket, query.Error) {
 	b := new(dualbucket)
 	b.pool = p

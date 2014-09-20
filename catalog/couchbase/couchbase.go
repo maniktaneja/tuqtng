@@ -317,6 +317,20 @@ func (b *bucket) CreateIndex(name string, key catalog.IndexKey, using catalog.In
 	}
 }
 
+func (b *bucket) CreateMRIndex(name string, key catalog.IndexKey, projection string, where string, groupby string) (catalog.Index, query.Error) {
+
+	if _, exists := b.indexes[name]; exists {
+		return nil, query.NewError(nil, fmt.Sprintf("Index already exists: %s", name))
+	}
+	idx, err := newMRViewIndex(name, key, b, projection, where, groupby)
+	if err != nil {
+		return nil, query.NewError(err, fmt.Sprintf("Error creating index: %s", name))
+	}
+	b.indexes[idx.Name()] = idx
+	return idx, nil
+
+}
+
 func newBucket(p *pool, name string) (*bucket, query.Error) {
 	clog.To(catalog.CHANNEL, "Created New Bucket %s", name)
 	cbbucket, err := p.cbpool.GetBucket(name)

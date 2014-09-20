@@ -125,7 +125,7 @@ func (this *SimpleExecutablePipelineBuilder) Build(p *plan.Plan, q network.Query
 			if err != nil {
 				return nil, err
 			}
-			currentOperator = xpipeline.NewCreateIndex(bucket, currentElement.Name, currentElement.IndexType, currentElement.Primary, currentElement.On)
+			currentOperator = xpipeline.NewCreateIndex(bucket, currentElement.Name, currentElement.IndexType, currentElement.Primary, currentElement.On, currentElement.Select)
 		case *plan.DropIndex:
 			pool, err := this.site.PoolByName(currentElement.Pool)
 			if err != nil {

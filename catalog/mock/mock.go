@@ -272,6 +272,10 @@ func (b *bucket) CreateIndex(name string, key catalog.IndexKey, using catalog.In
 	return nil, query.NewError(nil, "Not supported.")
 }
 
+func (b *bucket) CreateMRIndex(name string, key catalog.IndexKey, projection string, where string, groupby string) (catalog.Index, query.Error) {
+	return nil, query.NewError(nil, "Not Supported.")
+}
+
 type primaryIndex struct {
 	site   *site
 	name   string
