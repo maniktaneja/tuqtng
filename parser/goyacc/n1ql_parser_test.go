@@ -225,6 +225,7 @@ var invalidQueries = []string{
 	`CREATE PRIMARY INDEX abv_idx ON beer-sample(abv)`,
 	`CREATE PRIMARY INDEX ON beer-sample(abv) USING VIEW`,
 	`DROP PRIMARY INDEX`,
+	`beer-sample.type = "beer"`,
 
 	// these are me trying to understand code coverage in the parser
 	`\`,
