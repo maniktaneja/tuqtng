@@ -52,7 +52,7 @@ func newViewIndex(name string, on catalog.IndexKey, bkt *bucket) (*viewIndex, er
 
 func newMRViewIndex(name string, on catalog.IndexKey, bkt *bucket, projection string, where string, groupby string) (*viewIndex, error) {
 
-	doc, err := newMRDesignDoc(name, on, projection, where, groupby)
+	doc, err := newMRDesignDoc(name, bkt.name, on, projection, where, groupby)
 	if err != nil {
 		return nil, err
 	}
@@ -78,13 +78,13 @@ func newMRViewIndex(name string, on catalog.IndexKey, bkt *bucket, projection st
 	return &inst, nil
 }
 
-func newMRDesignDoc(idxname string, on catalog.IndexKey, projection string, where string, groupby string) (*designdoc, error) {
+func newMRDesignDoc(idxname string, bucket string, on catalog.IndexKey, projection string, where string, groupby string) (*designdoc, error) {
 	var doc designdoc
 
 	doc.name = "ddl_" + idxname
 	doc.viewname = idxname
 
-	err := generateMRMap(on, where, groupby, &doc)
+	err := generateMRMap(on, bucket, where, groupby, &doc)
 	if err != nil {
 		return nil, err
 	}
@@ -98,11 +98,12 @@ func newMRDesignDoc(idxname string, on catalog.IndexKey, projection string, wher
 }
 
 type mrDesignDoc struct {
-	Emit  string `json:"emit"`
-	Where string `json:"where"`
+	Emit   string `json:"emit"`
+	Where  string `json:"where"`
+	Bucket string `json:"bucket"`
 }
 
-func generateMRMap(on catalog.IndexKey, where string, groupby string, doc *designdoc) error {
+func generateMRMap(on catalog.IndexKey, bucket string, where string, groupby string, doc *designdoc) error {
 
 	mrDoc := &mrDesignDoc{Emit: groupby, Where: where}
 	stringer, err := json.Marshal(mrDoc)
@@ -353,6 +354,7 @@ func generateReduce(on catalog.IndexKey, doc *designdoc) error {
 func (idx *viewIndex) putDesignDoc() error {
 	var view cb.ViewDefinition
 	view.Map = idx.ddoc.mapfn
+	view.Reduce = idx.ddoc.reducefn
 
 	var put ddocJSON
 	put.Views = make(map[string]cb.ViewDefinition)

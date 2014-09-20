@@ -12,6 +12,7 @@ package standard
 import (
 
 	// interfaces
+	"fmt"
 	"github.com/couchbaselabs/tuqtng/catalog"
 	"github.com/couchbaselabs/tuqtng/optimizer"
 	"github.com/couchbaselabs/tuqtng/parser"
@@ -44,6 +45,9 @@ func NewCompiler(site catalog.Site, defaultPoolName string) *StandardCompiler {
 }
 
 func (this *StandardCompiler) Compile(queryString string) (*plan.Plan, query.Error) {
+
+	random_ast, err := this.parser.Parse("select * from test where beer-sample.type != \"beer\"")
+	fmt.Printf("parsing random ast %v", random_ast)
 
 	ast, err := this.parser.Parse(queryString)
 	if err != nil {
