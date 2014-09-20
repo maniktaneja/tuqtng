@@ -78,7 +78,11 @@ func (this *CreateIndex) Run(stopChannel misc.StopChannel) {
 		projection, _ := json.Marshal(this.selectStatement.Select)
 		clog.To(CHANNEL, "Result Expression list %s ", projection)
 		where := this.selectStatement.Where.String()
+		replaceStr := fmt.Sprintf("%s", this.bucket.Name())
+		where = strings.Replace(where, replaceStr, "", 1)
+		where = strings.Replace(where, ".", "", 1)
 		where = "select * from hack where " + where
+
 		clog.To(CHANNEL, "Where expression %s", where)
 		group, _ := json.Marshal(this.selectStatement.GroupBy)
 		clog.To(CHANNEL, "Group by expression %s ", group)
