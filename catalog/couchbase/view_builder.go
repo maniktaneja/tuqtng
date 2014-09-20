@@ -353,6 +353,7 @@ func generateReduce(on catalog.IndexKey, doc *designdoc) error {
 func (idx *viewIndex) putDesignDoc() error {
 	var view cb.ViewDefinition
 	view.Map = idx.ddoc.mapfn
+	view.Reduce = idx.ddoc.reducefn
 
 	var put ddocJSON
 	put.Views = make(map[string]cb.ViewDefinition)
