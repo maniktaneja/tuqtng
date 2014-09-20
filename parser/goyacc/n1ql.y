@@ -183,6 +183,19 @@ CREATE INDEX IDENTIFIER ON COLON IDENTIFIER DOT IDENTIFIER LPAREN expression_lis
 	createIndexStmt.Primary = false
 	parsingStatement = createIndexStmt
 }
+|
+/* for sequoia hack */
+CREATE INDEX IDENTIFIER ON select_stmt {
+
+        logDebugGrammar("COMPOUND_CREATE_INDEX_STATEMENT") 
+	select_statement := parsingStatement.(*ast.SelectStatement)
+	name := $3.s
+	createIndexStmt := ast.NewCreateIndexStatement()
+	createIndexStmt.Select = select_statement
+	createIndexStmt.Name = name
+	createIndexStmt.Primary = false
+	parsingStatement = createIndexStmt
+}
 ;
 
 

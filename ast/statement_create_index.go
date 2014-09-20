@@ -12,13 +12,14 @@ package ast
 import ()
 
 type CreateIndexStatement struct {
-	Method      string         `json:"method"`
-	Name        string         `json:"name"`
-	ExplainOnly bool           `json:"explain"`
-	Bucket      string         `json:"bucket"`
-	Pool        string         `json:"pool"`
-	On          ExpressionList `json:"on"`
-	Primary     bool           `json:"primary"`
+	Method      string           `json:"method"`
+	Name        string           `json:"name"`
+	ExplainOnly bool             `json:"explain"`
+	Bucket      string           `json:"bucket"`
+	Pool        string           `json:"pool"`
+	On          ExpressionList   `json:"on"`
+	Select      *SelectStatement `json: "select statement"`
+	Primary     bool             `json:"primary"`
 }
 
 func NewCreateIndexStatement() *CreateIndexStatement {
@@ -34,6 +35,10 @@ func (this *CreateIndexStatement) IsExplainOnly() bool {
 }
 
 func (this *CreateIndexStatement) VerifySemantics() error {
+	if this.Select != nil {
+		this.Select.VerifySemantics()
+		this.Bucket = this.Select.From.Bucket
+	}
 	return nil
 }
 
