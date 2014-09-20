@@ -1,6 +1,6 @@
 package main 
 import (
-    "goweb"
+    "github.com/nimishzynga/goweb"
     "fmt"
     "net/http"
 )
