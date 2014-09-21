@@ -29,6 +29,9 @@ func runWhere(doc []byte, expr string) interface{} {
 	if err != nil {
 		fmt.Println("transform failed")
 	}
+	if err != nil {
+		return false
+	}
 	return result.Value()
 }
 
