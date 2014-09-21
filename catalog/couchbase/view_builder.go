@@ -58,22 +58,33 @@ func newMRViewIndex(name string, on catalog.IndexKey, bkt *bucket, projection st
 	}
 
 	inst := viewIndex{
-		name:   name,
-		using:  catalog.MRVIEW,
-		on:     on,
-		ddoc:   doc,
-		bucket: bkt,
+		name:      name,
+		using:     catalog.MRVIEW,
+		on:        on,
+		ddoc:      doc,
+		bucket:    bkt,
+		indexType: "MR_INDEX",
 	}
 
 	err = inst.putDesignDoc()
-	if err != nil {
-		return nil, err
-	}
+	/*
+		if err != nil {
+			return nil, err
+		}
 
-	err = inst.WaitForIndex()
-	if err != nil {
-		return nil, err
-	}
+		err = inst.WaitForIndex()
+		if err != nil {
+			return nil, err
+		}
+	*/
+
+	// MR index creation is successful. Create a new bucket with this name
+	mrBucket := &bucket{pool: bkt.pool, name: name, bucketType: "MR_BUCKET", indexes: make(map[string]catalog.Index)}
+
+	mrBucket.indexes[name] = &inst
+	mrBucket.groupBy = true
+
+	bkt.pool.bucketCache[name] = mrBucket
 
 	return &inst, nil
 }

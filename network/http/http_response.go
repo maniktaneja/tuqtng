@@ -97,6 +97,7 @@ func (this *HttpResponse) ProcessResults() (int, error) {
 				return 0, err
 			}
 		}
+
 		valSanitized := misc.SanitizeUnrepresentableJSON(val)
 		_, err := this.printObj(valSanitized)
 		if err != nil {

@@ -10,6 +10,7 @@
 package xpipeline
 
 import (
+	"fmt"
 	"github.com/couchbaselabs/clog"
 	"github.com/couchbaselabs/dparval"
 	"github.com/couchbaselabs/tuqtng/ast"
@@ -62,6 +63,7 @@ func (this *Fetch) Run(stopChannel misc.StopChannel) {
 		defer close(this.Base.supportChannel)
 		defer close(this.Base.upstreamStopChannel)
 		for _, id := range this.ids {
+			fmt.Printf(" Received %v", id)
 			doc := dparval.NewValue(map[string]interface{}{})
 			doc.SetAttachment("meta", map[string]interface{}{"id": id})
 			this.processItem(doc)
@@ -73,6 +75,8 @@ func (this *Fetch) Run(stopChannel misc.StopChannel) {
 
 func (this *Fetch) processItem(item *dparval.Value) bool {
 	// add this item to the batch
+
+	fmt.Printf(" got item %v", item)
 	this.batch = append(this.batch, item)
 
 	// if the batch is full, do a fetch
@@ -99,22 +103,40 @@ func (this *Fetch) flushBatch() bool {
 	ids := make([]string, 0, FETCH_BATCH_SIZE)
 	for _, v := range this.batch {
 		meta := v.GetAttachment("meta")
+		fmt.Println("meta", meta)
 		if meta != nil {
 			id, ok := meta.(map[string]interface{})["id"]
 			if !ok {
 				return this.Base.SendError(query.NewError(nil, "asked to fetch an item without a key"))
 			} else {
-				ids = append(ids, id.(string)) //FIXME assert ids always strings
+				item := dparval.NewValue(map[string]interface{}{"id": id, "meta": meta, "type": "json", "value": v.GetAttachment("value")})
+				fmt.Printf(" this is the item %v", item.Value())
+				this.Base.SendItem(item)
+				if id == nil {
+					continue
+				}
+				//ids = append(ids, id.(string)) //FIXME assert ids always strings
 			}
 		} else {
 			return this.Base.SendError(query.NewError(nil, "asked to fetch an item without a meta"))
 		}
 	}
 
+	fmt.Printf(" this is the bucket %s", this.bucket.Name())
+
 	// now do a bulk fetch
-	bulkResponse, err := this.bucket.BulkFetch(ids)
-	if err != nil {
-		return this.Base.SendError(query.NewError(err, "error getting bulk response"))
+	var bulkResponse map[string]*dparval.Value
+	var err error
+	if this.bucket.Id() != "MR_BUCKET" {
+		bulkResponse, err = this.bucket.BulkFetch(ids)
+		if err != nil {
+			return this.Base.SendError(query.NewError(err, "error getting bulk response"))
+		}
+	} else {
+		bulkResponse = make(map[string]*dparval.Value)
+		for _, value := range ids {
+			fmt.Printf(" this is the value %v", value)
+		}
 	}
 
 	// now we need to emit the bulk fetched items in the correct order (from the id list)

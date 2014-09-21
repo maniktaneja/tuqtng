@@ -104,21 +104,30 @@ func (this *Scan) scanRange(scanRange *plan.ScanRange) bool {
 			if ok {
 				this.rowsScanned += 1
 				// rematerialize an object from the data returned by this index entry
-				doc := dparval.NewValue(map[string]interface{}{})
+				var doc *dparval.Value
 
-				hackIndex, ok := this.index.(catalog.Index)
-				if ok {
-					if hackIndex.Key() != nil && item.EntryKey != nil && len(hackIndex.Key()) == len(item.EntryKey) {
-						for i, key := range hackIndex.Key() {
-							entry := item.EntryKey[i]
-							doc = this.buildValue(key, entry)
+				if item.Key != nil && item.Value != nil {
+					doc = dparval.NewValue(map[string]interface{}{})
+					//fmt.Printf(" phew !!  %v %v", item.Key.(*dparval.Value).Value(), item.Value.(*dparval.Value).Value())
+					doc.SetAttachment("meta", map[string]interface{}{"id": item.Key.(*dparval.Value).Value()})
+					doc.SetAttachment("value", map[string]interface{}{"value": item.Value.(*dparval.Value).Value()})
+				} else {
+
+					doc := dparval.NewValue(map[string]interface{}{})
+					hackIndex, ok := this.index.(catalog.Index)
+					if ok {
+						if hackIndex.Key() != nil && item.EntryKey != nil && len(hackIndex.Key()) == len(item.EntryKey) {
+							for i, key := range hackIndex.Key() {
+								entry := item.EntryKey[i]
+								doc = this.buildValue(key, entry)
+							}
 						}
 					}
+
+					// attach metadata
+					doc.SetAttachment("meta", map[string]interface{}{"id": item.PrimaryKey})
+
 				}
-
-				// attach metadata
-				doc.SetAttachment("meta", map[string]interface{}{"id": item.PrimaryKey})
-
 				if this.as != "" {
 					this.SendItem(dparval.NewValue(map[string]interface{}{this.as: doc}))
 				} else {

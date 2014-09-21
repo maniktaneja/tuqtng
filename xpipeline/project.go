@@ -10,6 +10,7 @@
 package xpipeline
 
 import (
+	"fmt"
 	"github.com/couchbaselabs/clog"
 	"github.com/couchbaselabs/dparval"
 	"github.com/couchbaselabs/tuqtng/ast"
@@ -57,7 +58,9 @@ func (this *Project) processItem(item *dparval.Value) bool {
 			switch err := err.(type) {
 			case *dparval.Undefined:
 				// undefined contributes nothing to the result map
-				continue
+				fmt.Printf(" error %v", err)
+				val = item
+				//continue
 			default:
 				return this.Base.SendError(query.NewError(err, "unexpected error projecting expression"))
 			}
@@ -73,6 +76,8 @@ func (this *Project) processItem(item *dparval.Value) bool {
 					for k, v := range valval {
 						resultMap[k] = v
 					}
+				default:
+					fmt.Printf(":((")
 				}
 			}
 		} else {

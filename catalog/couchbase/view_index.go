@@ -26,11 +26,12 @@ const (
 )
 
 type viewIndex struct {
-	name   string
-	using  catalog.IndexType
-	on     catalog.IndexKey
-	ddoc   *designdoc
-	bucket *bucket
+	name      string
+	using     catalog.IndexType
+	on        catalog.IndexKey
+	ddoc      *designdoc
+	bucket    *bucket
+	indexType string
 }
 
 type primaryIndex struct {
@@ -156,6 +157,13 @@ func (vi *viewIndex) ScanRange(low catalog.LookupValue, high catalog.LookupValue
 
 	viewRowChannel := make(chan cb.ViewRow)
 	viewErrChannel := make(query.ErrorChannel)
+
+	clog.To(catalog.CHANNEL, "Bucket %s", vi.bucket.Name())
+	if vi.indexType == "MR_INDEX" {
+		// map-reduce type bucket
+		clog.To(catalog.CHANNEL, "Type of index is MR Index")
+		viewOptions["group"] = true
+	}
 	go WalkViewInBatches(viewRowChannel, viewErrChannel, vi.bucket.cbbucket, vi.DDocName(), vi.ViewName(), viewOptions, 1000, limit)
 
 	var viewRow cb.ViewRow
@@ -166,10 +174,17 @@ func (vi *viewIndex) ScanRange(low catalog.LookupValue, high catalog.LookupValue
 		select {
 		case viewRow, ok = <-viewRowChannel:
 			if ok {
-				entry := catalog.IndexEntry{PrimaryKey: viewRow.ID}
+				var entry catalog.IndexEntry
+				if vi.indexType != "MR_INDEX" {
+					entry = catalog.IndexEntry{PrimaryKey: viewRow.ID}
+				} else {
+					random1 := dparval.NewValue(viewRow.Key)
+					random2 := dparval.NewValue(viewRow.Value)
+					entry = catalog.IndexEntry{Key: random1, Value: random2}
+				}
 
 				// try to add the view row key as the entry key (unless this is _all_docs)
-				if vi.DDocName() != "" {
+				if vi.DDocName() != "" && vi.indexType != "MR_INDEX" {
 					lookupValue, err := convertCouchbaseViewKeyToLookupValue(viewRow.Key)
 					if err == nil {
 						entry.EntryKey = lookupValue

@@ -103,6 +103,7 @@ func (this *SimplePlanner) buildSelectStatementPlans(stmt *ast.SelectStatement, 
 			var lastStep plan.PlanElement
 
 			switch index := index.(type) {
+
 			case catalog.PrimaryIndex:
 				clog.To(planner.CHANNEL, "See primary index %v", index.Name())
 				// if from.Over == nil && stmt.Where == nil && stmt.GroupBy != nil && len(stmt.GroupBy) == 0 && CanFastCountBucket(stmt.Select) {
@@ -114,67 +115,75 @@ func (this *SimplePlanner) buildSelectStatementPlans(stmt *ast.SelectStatement, 
 				// see if this index can be used
 				clog.To(planner.CHANNEL, "See index %v", index.Name())
 				clog.To(planner.CHANNEL, "with Key %v", index.Key())
-				if stmt.Where != nil && from.Projection == nil {
-					possible, ranges, _, err := CanIUseThisIndexForThisWhereClause(index, stmt.Where, stmt.From.As)
-					if err != nil {
-						clog.Error(err)
-						continue
-					}
-					clog.To(planner.CHANNEL, "Can I use it1: %v", possible)
-					if possible {
+				clog.To(planner.CHANNEL, "See primary index %v", index.Name())
+				// if from.Over == nil && stmt.Where == nil && stmt.GroupBy != nil && len(stmt.GroupBy) == 0 && CanFastCountBucket(stmt.Select) {
+				// 	lastStep = plan.NewFastCount(pool.Name(), bucket.Name(), "", nil, nil)
+				// } else {
+				lastStep = plan.NewScan(pool.Name(), bucket.Name(), index.Name(), nil)
 
-						// great, but lets check for a min optimizatin too
-						if stmt.GroupBy != nil && len(stmt.GroupBy) == 0 {
-							possible, minranges, _, _ := CanIUseThisIndexForThisProjectionNoWhereNoGroupClause(index, stmt.Select, stmt.From.As)
-							if possible {
-								for _, r := range ranges {
-									r.Limit = minranges[0].Limit
-								}
-							}
-						}
-
-						scan := plan.NewScan(pool.Name(), bucket.Name(), index.Name(), ranges)
-						// see if this index covers the query
-						if DoesIndexCoverStatement(index, stmt) {
-							scan.Cover = true
-							scan.As = from.As
-						}
-						lastStep = scan
-					} else {
-						continue
-					}
-				} else if from.Projection == nil {
-
-					// try to do a fast count if its possible
-					doingFastCount := false
-					// countIndex, isCountIndex := index.(catalog.CountIndex)
-					// if isCountIndex {
-					// 	fastCountIndexOnExpr := CanFastCountIndex(countIndex, stmt.From.As, stmt.Select)
-					// 	if fastCountIndexOnExpr != nil && from.Over == nil && stmt.Where == nil && stmt.GroupBy != nil && len(stmt.GroupBy) == 0 {
-					// 		lastStep = plan.NewFastCount(pool.Name(), bucket.Name(), countIndex.Name(), fastCountIndexOnExpr, nil)
-					// 		doingFastCount = true
-					// 	}
-
-					// }
-
-					// this works for aggregates on the whole bucket
-					if !doingFastCount && stmt.GroupBy != nil && len(stmt.GroupBy) == 0 {
-						possible, ranges, _, err := CanIUseThisIndexForThisProjectionNoWhereNoGroupClause(index, stmt.Select, stmt.From.As)
+				/*
+					if stmt.Where != nil && from.Projection == nil {
+						possible, ranges, _, err := CanIUseThisIndexForThisWhereClause(index, stmt.Where, stmt.From.As)
 						if err != nil {
 							clog.Error(err)
 							continue
 						}
-						clog.To(planner.CHANNEL, "Can I use it2: %v", possible)
+						clog.To(planner.CHANNEL, "Can I use it1: %v", possible)
 						if possible {
-							lastStep = plan.NewScan(pool.Name(), bucket.Name(), index.Name(), ranges)
+
+							// great, but lets check for a min optimizatin too
+							if stmt.GroupBy != nil && len(stmt.GroupBy) == 0 {
+								possible, minranges, _, _ := CanIUseThisIndexForThisProjectionNoWhereNoGroupClause(index, stmt.Select, stmt.From.As)
+								if possible {
+									for _, r := range ranges {
+										r.Limit = minranges[0].Limit
+									}
+								}
+							}
+
+							scan := plan.NewScan(pool.Name(), bucket.Name(), index.Name(), ranges)
+							// see if this index covers the query
+							if DoesIndexCoverStatement(index, stmt) {
+								scan.Cover = true
+								scan.As = from.As
+							}
+							lastStep = scan
 						} else {
 							continue
 						}
-					} else if !doingFastCount {
-						continue
-					}
-				}
+					} else if from.Projection == nil {
 
+						// try to do a fast count if its possible
+						doingFastCount := false
+						// countIndex, isCountIndex := index.(catalog.CountIndex)
+						// if isCountIndex {
+						// 	fastCountIndexOnExpr := CanFastCountIndex(countIndex, stmt.From.As, stmt.Select)
+						// 	if fastCountIndexOnExpr != nil && from.Over == nil && stmt.Where == nil && stmt.GroupBy != nil && len(stmt.GroupBy) == 0 {
+						// 		lastStep = plan.NewFastCount(pool.Name(), bucket.Name(), countIndex.Name(), fastCountIndexOnExpr, nil)
+						// 		doingFastCount = true
+						// 	}
+
+						// }
+
+						// this works for aggregates on the whole bucket
+						if !doingFastCount && stmt.GroupBy != nil && len(stmt.GroupBy) == 0 {
+							possible, ranges, _, err := CanIUseThisIndexForThisProjectionNoWhereNoGroupClause(index, stmt.Select, stmt.From.As)
+							if err != nil {
+								clog.Error(err)
+								continue
+							}
+							clog.To(planner.CHANNEL, "Can I use it2: %v", possible)
+							if possible {
+								lastStep = plan.NewScan(pool.Name(), bucket.Name(), index.Name(), ranges)
+							} else {
+								continue
+							}
+						} else if !doingFastCount {
+							continue
+						}
+					}
+
+				*/
 			default:
 				clog.To(planner.CHANNEL, "Unsupported type of index %T", index)
 				continue

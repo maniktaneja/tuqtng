@@ -160,10 +160,12 @@ func keepPoolFresh(p *pool) {
 }
 
 type bucket struct {
-	pool     *pool
-	name     string
-	indexes  map[string]catalog.Index
-	cbbucket *cb.Bucket
+	pool       *pool
+	bucketType string
+	name       string
+	indexes    map[string]catalog.Index
+	cbbucket   *cb.Bucket
+	groupBy    bool
 }
 
 func (b *bucket) Release() {
@@ -175,6 +177,9 @@ func (b *bucket) PoolId() string {
 }
 
 func (b *bucket) Id() string {
+	if b.bucketType == "MR_BUCKET" {
+		return "MR_BUCKET"
+	}
 	return b.Name()
 }
 
