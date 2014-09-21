@@ -1,9 +1,9 @@
-package main 
+package main
 
 import (
 	"github.com/couchbaselabs/dparval"
 	"github.com/couchbaselabs/tuqtng/ast"
-    yaccParser "github.com/couchbaselabs/tuqtng/parser/goyacc"
+	yaccParser "github.com/couchbaselabs/tuqtng/parser/goyacc"
 )
 
 // Evaluator interface for projector, to be implemented by secondary-index or
@@ -39,14 +39,12 @@ func CompileN1QLExpression(expressions []string) ([]interface{}, error) {
 	return cExprs, nil
 }
 
-func HackCompile(expr string) []interface{} {
-	    cExprs := make([]interface{}, 0, 1)
-        parser := yaccParser.NewN1qlParser()
-        random_ast, _ := parser.Parse(expr)
-        select_statement := random_ast.(*ast.SelectStatement)
-        select_statement.VerifySemantics()
-		cExprs = append(cExprs, select_statement.Where)
-        return cExprs
+func HackCompile(expr string) ast.Expression {
+	parser := yaccParser.NewN1qlParser()
+	random_ast, _ := parser.Parse(expr)
+	select_statement := random_ast.(*ast.SelectStatement)
+	select_statement.VerifySemantics()
+	return select_statement.Where
 }
 
 // N1QLTransform will use compile list of expression from N1QL's DDL

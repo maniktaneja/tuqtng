@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/couchbaselabs/dparval"
+	"github.com/couchbaselabs/tuqtng/ast"
+	yaccParser "github.com/couchbaselabs/tuqtng/parser/goyacc"
 	"github.com/nimishzynga/goweb"
 	"net/http"
 )
@@ -12,34 +16,39 @@ func setupHandler() {
 	})
 }
 
-func runWhere(doc []byte, expr string) string {
+func runWhere(doc []byte, expr string) interface{} {
 	//exprs := []string{`{"type":"property","path":"name"}`, `{"type":"property","path":"abv"}`}
-	cExpr := HackCompile(expr)
-    fmt.Println("compiled expr is ", cExpr)
-	secKey, err := N1QLTransform(doc, cExpr)
+	parser := yaccParser.NewN1qlParser()
+	random_ast, _ := parser.Parse(expr)
+	select_statement := random_ast.(*ast.SelectStatement)
+	jsonm, _ := json.Marshal(select_statement.Where)
+	fmt.Printf("Where clause %v\n", string(jsonm))
+
+	a := dparval.NewValueFromBytes(doc)
+	result, err := select_statement.Where.Evaluate(a)
 	if err != nil {
-        fmt.Println("transform failed")
+		fmt.Println("transform failed")
 	}
-	return string(secKey)
+	return result.Value()
 }
 
-func runExpr(doc []byte, expr []string) string {
+func runExpr(doc []byte, expr string) string {
 	//exprs := []string{`{"type":"property","path":"name"}`, `{"type":"property","path":"abv"}`}
-	cExpr,err := CompileN1QLExpression(expr)
+	cExpr, err := CompileN1QLExpression([]string{expr})
 	if err != nil {
-        fmt.Println("compilation failed")
+		fmt.Println("compilation failed")
 	}
-    fmt.Println("compiled expr is ", cExpr)
+	fmt.Println("compiled emit expr is ", cExpr)
 	secKey, err := N1QLTransform(doc, cExpr)
 	if err != nil {
-        fmt.Println("transform failed", err)
+		fmt.Println("transform failed", err)
 	}
 	return string(secKey)
 }
 
 type Expr struct {
-    Where string
-    Emit  []string
+	Where string `json:"where"`
+	Emit  string `json:"emit"`
 }
 
 type Doc struct {
@@ -49,23 +58,25 @@ type Doc struct {
 }
 
 func HandleDoc(c *goweb.Context) {
-	fmt.Println("dfdfd")
+	fmt.Println("handling")
 	if c.IsPost() || c.IsPut() {
 		//NewDoc := Doc{DocData: make(map[string]string)}
 		NewDoc := Doc{}
 		if err := c.Fill(&NewDoc); err != nil {
-            fmt.Println(err)
+			fmt.Println("error is here", err)
 			return
 		}
 		fmt.Println("query doc = ", NewDoc.DocData, "expr = ", NewDoc.DocExpr)
-		data := runWhere([]byte(NewDoc.DocData), NewDoc.DocExpr.Where)
-        if data != "" {
-		    data = runExpr([]byte(NewDoc.DocData), NewDoc.DocExpr.Emit)
-        } else {
-            fmt.Println("runwhere failed")
-        }
-		fmt.Println("map result = ", data)
-		c.WriteResponse(data, 200)
+		where_clause := runWhere([]byte(NewDoc.DocData), NewDoc.DocExpr.Where)
+		fmt.Println("where returned ", where_clause)
+		emit := ""
+		if where_clause == true {
+			emit = runExpr([]byte(NewDoc.DocData), NewDoc.DocExpr.Emit)
+		} else {
+			fmt.Println("runwhere failed")
+		}
+		fmt.Println("map result = ", emit)
+		c.WriteResponse(emit, 200)
 	}
 }
 
