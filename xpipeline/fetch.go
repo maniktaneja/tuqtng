@@ -109,7 +109,7 @@ func (this *Fetch) flushBatch() bool {
 			if !ok {
 				return this.Base.SendError(query.NewError(nil, "asked to fetch an item without a key"))
 			} else {
-				item := dparval.NewValue(map[string]interface{}{"id": id, "meta": meta, "type": "json", "value": v.GetAttachment("value")})
+				item := dparval.NewValue(map[string]interface{}{"id": id, "value": v.GetAttachment("value")})
 				fmt.Printf(" this is the item %v", item.Value())
 				this.Base.SendItem(item)
 				if id == nil {

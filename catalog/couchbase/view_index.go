@@ -163,6 +163,7 @@ func (vi *viewIndex) ScanRange(low catalog.LookupValue, high catalog.LookupValue
 		// map-reduce type bucket
 		clog.To(catalog.CHANNEL, "Type of index is MR Index")
 		viewOptions["group"] = true
+		viewOptions["stale"] = false
 	}
 	go WalkViewInBatches(viewRowChannel, viewErrChannel, vi.bucket.cbbucket, vi.DDocName(), vi.ViewName(), viewOptions, 1000, limit)
 
