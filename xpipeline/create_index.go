@@ -84,7 +84,8 @@ func (this *CreateIndex) Run(stopChannel misc.StopChannel) {
 		where = "select * from hack where " + where
 
 		clog.To(CHANNEL, "Where expression %s", where)
-		group, _ := json.Marshal(this.selectStatement.GroupBy)
+		DotMem := this.selectStatement.GroupBy[0].(*ast.DotMemberOperator)
+		group, _ := json.Marshal(DotMem.Right)
 		clog.To(CHANNEL, "Group by expression %s ", group)
 
 		clog.To(CHANNEL, "create_index (mr index) operator starting")

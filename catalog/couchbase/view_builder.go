@@ -116,6 +116,8 @@ type mrDesignDoc struct {
 
 func generateMRMap(on catalog.IndexKey, bucket string, where string, groupby string, doc *designdoc) error {
 
+	fmt.Println("group by:", groupby)
+
 	mrDoc := &mrDesignDoc{Emit: groupby, Where: where}
 	stringer, err := json.Marshal(mrDoc)
 	if err != nil {
